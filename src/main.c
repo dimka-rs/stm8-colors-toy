@@ -3,7 +3,7 @@
 #include "main.h"
 
 /* Private defines -----------------------------------------------------------*/
-#define BRIGHTNESS (20)
+#define BRIGHTNESS (25)
 
 typedef struct
 {
@@ -34,6 +34,10 @@ void init(void)
     WS2812B_PORT->CR1 |= WS2812B_PIN;
     WS2812B_PORT->CR2 |= WS2812B_PIN;
 
+    // IN Float No Int
+    BTN_PORT->DDR &= BTN_1 | BTN_2 | BTN_3;
+    BTN_PORT->CR1 &= BTN_1 | BTN_2 | BTN_3;
+    BTN_PORT->CR2 &= BTN_1 | BTN_2 | BTN_3;
 }
 
 
@@ -101,29 +105,32 @@ void ws2812b_send_leds(ws2812b_led_t *leds, uint8_t count)
     return;
 }
 
+
 void set_color(ws2812b_led_t *led, uint8_t bits)
 {
-    led->red   = (bits & 1) ? BRIGHTNESS : 0;
-    led->green = (bits & 2) ? BRIGHTNESS : 0;
-    led->blue  = (bits & 4) ? BRIGHTNESS : 0;
+    led->red   = (bits & 8) ? BRIGHTNESS : 0;
+    led->green = (bits & 4) ? BRIGHTNESS : 0;
+    led->blue  = (bits & 2) ? BRIGHTNESS : 0;
 }
 
+uint8_t get_buttons(void)
+{
+    return BTN_PORT->IDR & (BTN_1 | BTN_2 | BTN_3);
+}
 
 void main(void)
 {
     init();
 
     ws2812b_led_t led;
-    uint8_t color = 0;
 
     while(1) {
-        set_color(&led, color);
+        set_color(&led, 0);
+        ws2812b_send_leds(&led, 1);
+        set_color(&led, get_buttons());
         ws2812b_send_leds(&led, 1);
 
-        color++;
-        if (color >= 8) color = 0;
-
-        delay_us(1000000);
+        delay_us(100000);
     }
 
 }
